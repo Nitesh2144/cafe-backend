@@ -34,7 +34,7 @@ export const generateUnitQR = async (req, res) => {
 
     // 🔗 QR URL
     const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    const qrUrl = `${baseUrl}/b/${business.businessCode}/u/${unit.unitCode}`;
+const qrUrl = `${baseUrl}/?b=${business.businessCode}&u=${unit.unitCode}`;
 
     // 🎨 Generate QR
     const qrImage = await QRCode.toDataURL(qrUrl);
