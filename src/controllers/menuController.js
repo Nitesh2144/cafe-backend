@@ -3,6 +3,68 @@ import Business from "../models/Business.js";
 import cloudinary from "../utils/cloudinary.js";
 import Category from "../models/Category.js";
 
+export const getBusinessSettings = async (req, res) => {
+  try {
+    const { businessCode } = req.params;
+
+    if (!businessCode) {
+      return res.status(400).json({
+        message: "businessCode is required",
+      });
+    }
+
+    const business = await Business.findOne({ businessCode });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found",
+      });
+    }
+
+    res.json({
+      enableItemNote: business.orderSettings?.enableItemNote || false,
+    });
+  } catch (error) {
+    console.error("❌ Get business settings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+/* ===============================
+   ⚙️ UPDATE ORDER SETTINGS
+   =============================== */
+export const updateOrderSettings = async (req, res) => {
+  try {
+    const { businessCode, enableItemNote } = req.body;
+
+    if (!businessCode || typeof enableItemNote !== "boolean") {
+      return res.status(400).json({
+        message: "businessCode and enableItemNote are required",
+      });
+    }
+
+    const business = await Business.findOneAndUpdate(
+      { businessCode },
+      {
+        "orderSettings.enableItemNote": enableItemNote,
+      },
+      { new: true }
+    );
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found",
+      });
+    }
+
+    res.json({
+      message: "Order settings updated successfully",
+      enableItemNote: business.orderSettings.enableItemNote,
+    });
+  } catch (error) {
+    console.error("❌ Update order settings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const addCategory = async (req, res) => {
   try {
@@ -162,6 +224,7 @@ export const addMenuItem = async (req, res) => {
 
 
 /* ================= GET MENU (CUSTOMER VIEW) ================= */
+
 export const getMenuByBusinessCode = async (req, res) => {
   try {
     const { businessCode } = req.params;
@@ -172,17 +235,29 @@ export const getMenuByBusinessCode = async (req, res) => {
       });
     }
 
+    // 🔥 Business nikalo (settings ke liye)
+    const business = await Business.findOne({ businessCode });
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
     const menu = await Menu.find({
       businessCode,
       isAvailable: true,
     }).sort({ category: 1, name: 1 });
 
-    res.json(menu);
+    res.json({
+      businessName: business.businessName,
+      enableItemNote: business.orderSettings?.enableItemNote || false, // 👈 IMPORTANT
+      menu,
+    });
   } catch (error) {
     console.error("❌ Get menu error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /* ================= UPDATE MENU ITEM ================= */
 export const updateMenuItem = async (req, res) => {

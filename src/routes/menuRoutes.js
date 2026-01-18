@@ -7,11 +7,19 @@ import {
   getMenuByBusinessId,
   addCategory,
   getCategoriesByBusinessCode,
-  deleteCategoryByBusinessCode
+  deleteCategoryByBusinessCode,
+    getBusinessSettings,
+  updateOrderSettings,
 } from "../controllers/menuController.js";
 import { menuUpload } from "../middleware/menuUpload.js";
 
 const menuRoutes = express.Router();
+
+
+// ⚙️ SETTINGS
+menuRoutes.get("/settings/:businessCode", getBusinessSettings);
+menuRoutes.patch("/order-settings", updateOrderSettings);
+
 
 menuRoutes.post("/add", menuUpload.single("image"), addMenuItem);
 menuRoutes.put("/update", menuUpload.single("image"), updateMenuItem);

@@ -44,7 +44,13 @@ const businessSchema = new mongoose.Schema(
     },
 
     units: [unitSchema],
-
+    
+   orderSettings: {
+      enableItemNote: {
+        type: Boolean,
+        default: false, // 👈 ADMIN CONTROL
+      },
+    },
     isActive: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: true },
 

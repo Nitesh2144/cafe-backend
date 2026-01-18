@@ -32,7 +32,7 @@ export const placeOrder = async (req, res) => {
     let totalAmount = 0;
 
     for (let i = 0; i < items.length; i++) {
-      const { itemId, quantity } = items[i];
+      const { itemId, quantity, note } = items[i];
 
       const menuItem = await Menu.findOne({
         _id: itemId,
@@ -53,6 +53,7 @@ export const placeOrder = async (req, res) => {
         name: menuItem.name,
         price: menuItem.price,
         quantity,
+        note: note?.trim() || "",
       });
     }
 
