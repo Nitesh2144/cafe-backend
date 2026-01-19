@@ -30,7 +30,12 @@ const businessSchema = new mongoose.Schema(
       uppercase: true,
     },
 
-    businessType: { type: String, default: "CAFE" },
+   businessType: {
+  type: String,
+  enum: ["CAFE", "RESTAURANT"],
+  required: true,
+},
+
 
     ownerName: String,
     ownerMobile: String,
@@ -53,12 +58,17 @@ const businessSchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: true },
-
- planType: {
+isTrialActive: { type: Boolean, default: true },
+trialStartDate: {
+  type: Date,
+},
+trialEndDate: { type: Date },
+planType: {
   type: String,
-  enum: ["FREE", "CAFE", "RESTAURANT"],
+  enum: ["FREE", "HALF_YEARLY", "YEARLY"],
   default: "FREE",
 },
+
 
 planStartDate: {
   type: Date,

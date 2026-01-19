@@ -8,21 +8,24 @@ const paymentManuallyRoutes = express.Router();
 
 const PLAN_CONFIG = {
   CAFE: {
-    MONTHLY: { price: 499, months: 1 },
-    YEARLY: { price: 4999, months: 12 },
+    MONTHLY: { price: 499, months: 1, visible: false }, 
+    HALF_YEARLY: { price: 1, months: 6, visible: true },
+    YEARLY: { price: 4999, months: 12, visible: true },
   },
   RESTAURANT: {
-    MONTHLY: { price: 999, months: 1 },
-    YEARLY: { price: 9999, months: 12 },
+    MONTHLY: { price: 999, months: 1, visible: false },
+    HALF_YEARLY: { price: 4999, months: 6, visible: true },
+    YEARLY: { price: 9999, months: 12, visible: true },
   },
 };
 
-paymentManuallyRoutes.post("/generate-qr", async (req, res) => {
-  const { businessCode, planType, duration = "MONTHLY" } = req.body;
+
+paymentManuallyRoutes.post("/generate-qr",  verifyToken, async (req, res) => {
+  const { businessCode, businessType, planType } = req.body; // planType = HALF_YEARLY / YEARLY
 
   if (
-    !PLAN_CONFIG[planType] ||
-    !PLAN_CONFIG[planType][duration]
+    !PLAN_CONFIG[businessType] ||
+    !PLAN_CONFIG[businessType][planType]
   ) {
     return res.status(400).json({
       success: false,
@@ -30,48 +33,49 @@ paymentManuallyRoutes.post("/generate-qr", async (req, res) => {
     });
   }
 
-  const { price } = PLAN_CONFIG[planType][duration];
+  const { price } = PLAN_CONFIG[businessType][planType];
 
-  const note = `PLAN=${planType}|DURATION=${duration}|BUSINESS_CODE=${businessCode}`;
+  const note = `BUSINESS=${businessCode}|TYPE=${businessType}|PLAN=${planType}`;
 
   const upiUrl =
     `upi://pay` +
     `?pa=niteshsinghtomar424@okaxis` +
-    `&pn=TechShower` +
+    `&pn=NiteshTomar` +
     `&am=${price}` +
     `&cu=INR` +
     `&tn=${encodeURIComponent(note)}`;
 
-  let payment = await Payment.findOne({
-    businessCode,
-    planType,
-    duration,
-    status: "PENDING",
-  });
+// 🔥 STEP 1: Purane pending payment delete karo
+await Payment.deleteMany({
+  businessCode,
+  businessType,
+  status: "PENDING",
+});
 
-  if (!payment) {
-    payment = await Payment.create({
-      businessCode,
-      planType,
-      duration,
-      amount: price,
-      note,
-    });
-  }
+// 🔥 STEP 2: Fresh payment create karo
+const payment = await Payment.create({
+  businessCode,
+  businessType,
+  planType,
+  amount: price,
+  note,
+});
+
 
   res.json({
     success: true,
     upiUrl,
     amount: price,
-    duration,
+    planType,
   });
 });
+
 // 🔥 Get business by code (plan info)
 paymentManuallyRoutes.get("/by-code/:businessCode", verifyToken, async (req, res) => {
   try {
     const business = await Business.findOne({
       businessCode: req.params.businessCode,
-    }).select("planType planStartDate planEndDate isPlanActive");
+    }).select("planType planStartDate planEndDate isPlanActive isTrialActive trialStartDate trialEndDate");
 
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
@@ -111,9 +115,9 @@ paymentManuallyRoutes.post("/admin/verify-payment", async (req, res) => {
   payment.status = "PAID";
   payment.verified = true;
   await payment.save();
+const { months } = PLAN_CONFIG[payment.businessType][payment.planType];
 
-  const { months } =
-    PLAN_CONFIG[payment.planType][payment.duration];
+
 
   const startDate = new Date();
   const endDate = new Date();
@@ -126,26 +130,27 @@ paymentManuallyRoutes.post("/admin/verify-payment", async (req, res) => {
       planStartDate: startDate,
       planEndDate: endDate,
       isPlanActive: true,
+       isTrialActive: false 
     }
   );
 
   res.json({
     success: true,
-    message: `Plan activated (${payment.duration})`,
+  message: `Plan activated (${payment.planType})`,
   });
 });
 
 
 paymentManuallyRoutes.post(
   "/user-paid",
-  attachIO, // ✅ ADD THIS LINE
+  attachIO,
   async (req, res) => {
-    const { businessCode, planType, duration } = req.body;
+    const { businessCode, businessType, planType } = req.body;
 
     const payment = await Payment.findOne({
       businessCode,
+      businessType,
       planType,
-      duration,
       status: "PENDING",
     });
 
@@ -156,18 +161,18 @@ paymentManuallyRoutes.post(
     payment.status = "USER_PAID";
     await payment.save();
 
-    // 🔥 NOW THIS WILL WORK
     req.io.emit("new-payment", {
       paymentId: payment._id,
       businessCode,
+      businessType,
       planType,
-      duration,
       amount: payment.amount,
     });
 
     res.json({ success: true });
   }
 );
+
 
 
 

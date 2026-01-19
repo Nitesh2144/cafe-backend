@@ -1,6 +1,15 @@
 export const isPlanValid = (business) => {
-  if (!business.planEndDate) return false;
-
   const now = new Date();
-  return now <= business.planEndDate && business.isPlanActive;
+
+  // 🆓 Free Trial
+  if (business.isTrialActive && business.trialEndDate) {
+    return now <= business.trialEndDate;
+  }
+
+  // 💳 Paid Plan
+  if (business.isPlanActive && business.planEndDate) {
+    return now <= business.planEndDate;
+  }
+
+  return false;
 };

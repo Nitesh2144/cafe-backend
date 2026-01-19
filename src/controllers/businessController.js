@@ -174,6 +174,9 @@ export const registerBusinessWithUser = async (req, res) => {
         message: "Username or email already exists",
       });
     }
+const start = new Date();
+const trialEnd = new Date();
+trialEnd.setDate(trialEnd.getDate() + 8);
 
     // create business (units empty)
     const business = await Business.create({
@@ -184,7 +187,10 @@ export const registerBusinessWithUser = async (req, res) => {
       ownerMobile,
       ownerEmail,
       address,
-      planType,
+       isTrialActive: true,
+        trialStartDate:start,
+  trialEndDate: trialEnd,
+    isPlanActive: false
     });
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -196,9 +202,20 @@ export const registerBusinessWithUser = async (req, res) => {
       password: hashedPassword,
        role: "admin",
     });
+// 🔐 CREATE JWT TOKEN (ADMIN AUTO LOGIN)
+const token = jwt.sign(
+  {
+    userId: businessUser._id,
+    role: "admin",
+    businessId: business._id,
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRES }
+);
 
     res.status(201).json({
       message: "Business & admin user registered successfully",
+       token,
       businessId: business._id,
       adminUser: {
         id: businessUser._id,

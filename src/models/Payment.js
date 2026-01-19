@@ -8,11 +8,16 @@ const paymentSchema = new mongoose.Schema(
       uppercase: true,
     },
 
+    businessType: {
+      type: String,
+      enum: ["CAFE", "RESTAURANT"],
+      required: true,
+    },
     amount: { type: Number, required: true },
 
-    planType: {
+     planType: {
       type: String,
-      enum: ["FREE", "CAFE", "RESTAURANT"],
+      enum: ["HALF_YEARLY", "YEARLY"],
       required: true,
     },
 
@@ -27,11 +32,6 @@ const paymentSchema = new mongoose.Schema(
   type: String,
   enum: ["PENDING", "USER_PAID", "PAID", "REJECTED"],
   default: "PENDING",
-},
-duration: {
-  type: String,
-  enum: ["MONTHLY", "YEARLY"],
-  required: true,
 },
 
     verified: {

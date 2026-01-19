@@ -47,15 +47,13 @@ export const protect = (req, res, next) => {
 };
 
 
-/* ================= ADMIN ONLY ================= */
 export const onlyAdmin = (req, res, next) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({
-      message: "Admin access only",
-    });
+  if (!["admin", "SUPER_ADMIN"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Admin access only" });
   }
   next();
 };
+
 
 export const attachIO = (req, res, next) => {
   req.io = req.app.get("io"); // 👈 yahin magic hai
