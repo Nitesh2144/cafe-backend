@@ -106,9 +106,16 @@ export const deleteUnit = async (req, res) => {
 /* ================= GET UNITS ================= */
 export const getUnits = async (req, res) => {
   try {
-    const { businessId } = req.query;
+    const { businessId, businessCode } = req.query;
 
-    const business = await Business.findById(businessId);
+    let business;
+
+    if (businessId) {
+      business = await Business.findById(businessId);
+    } else if (businessCode) {
+      business = await Business.findOne({ businessCode });
+    }
+
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
@@ -118,3 +125,4 @@ export const getUnits = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+

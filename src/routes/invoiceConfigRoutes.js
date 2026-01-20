@@ -19,44 +19,19 @@ invoiceConfigRoutes.get("/:businessCode", async (req, res) => {
 /* ================= SAVE / UPDATE CONFIG ================= */
 invoiceConfigRoutes.put("/:businessCode", async (req, res) => {
   try {
-    const {
-      logoUrl,
-      themeColor,
-      showGST,
-      gstPercent,
-      showPaymentStatus,
-      showOrderTime,
-      showUnitName,
-      invoicePrefix,
-      footerText,
-      fontSize,
-      paperSize,
-      businessPhone,
-      businessAddress, 
-    } = req.body;
-
     const config = await InvoiceConfig.findOneAndUpdate(
       { businessCode: req.params.businessCode },
+      { $set: req.body },                 // ✅ ONLY UPDATE DATA
       {
-        logoUrl,
-        themeColor,
-        showGST,
-        gstPercent,
-        showPaymentStatus,
-        showOrderTime,
-        showUnitName,
-        invoicePrefix,
-        footerText,
-        fontSize,
-        paperSize,
-        businessPhone,
-        businessAddress, 
-      },
-      { new: true, upsert: true }
+        new: true,
+        upsert: true,                     // ✅ create if not exists
+        runValidators: true,              // ✅ schema validation
+      }
     );
 
     res.json(config);
   } catch (err) {
+    console.error("❌ Save invoice config error:", err);
     res.status(500).json({ message: "Failed to save config" });
   }
 });

@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
+import express from "express";
 import http from "http";
 import { Server } from "socket.io";
-import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import entryRouter from "./routes/businessRoutes.js";
@@ -19,14 +19,15 @@ import paymentManuallyRoutes from "./routes/payment.routes.js";
 import invoiceConfigRoutes from "./routes/invoiceConfigRoutes.js"
 import "./cron/deleteOldOrders.js";
 
+const app = express();
 connectDB();
 
-const app = express();
 
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
+app.use(cors());
 
+app.use("/api/invoice-config", invoiceConfigRoutes);
 
 app.use("/api/entry", entryRouter);
 app.use("/api/unit", unitRoutes);
@@ -39,11 +40,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/super/auth", superAuthRoutes);
 app.use("/api/super", superRoutes);
 app.use("/api/manpayment", paymentManuallyRoutes);
-app.use("/api/invoice-config", invoiceConfigRoutes);
-
-app.get("/", (req, res)=>{
-    res.send("Hii Server Started Nitesh")
-});
 
 
 const PORT = process.env.PORT || 5000;
