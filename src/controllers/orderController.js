@@ -8,7 +8,7 @@ import { getNextBillNumber } from "../utils/getNextBillNumber.js";
    =============================== */
 export const placeOrder = async (req, res) => {
   try {
-    const { businessCode, unitCode, items } = req.body;
+    const { businessCode, unitCode, items, orderType} = req.body;
 
     if (!businessCode || !unitCode || !items || items.length === 0) {
       return res.status(400).json({
@@ -60,9 +60,11 @@ export const placeOrder = async (req, res) => {
     const newOrder = new Order({
       businessCode,
       unitCode,
+  orderType: orderType || "DINE_IN",
       items: orderItems,
       totalAmount,
       customerCount: 1,
+        isOccupied: true,
     });
 
     await newOrder.save();
@@ -114,6 +116,10 @@ export const getOrdersByBusiness = async (req, res) => {
     const ordersWithUnitName = orders.map((order) => ({
       ...order,
       unitName: unitMap[order.unitCode] || order.unitCode,
+        displayType:
+    order.orderType === "PARCEL"
+      ? "PARCEL"
+      : "DINE IN",
     }));
 
     res.json(ordersWithUnitName);
@@ -186,8 +192,15 @@ export const markOrderPaid = async (req, res) => {
       order.billNo = await getNextBillNumber(order.businessCode);
     }
 
-    order.paymentStatus = "PAID";
-    await order.save();
+order.paymentStatus = "PAID";
+
+// ✅ agar order completed bhi hai to free karo
+if (order.orderStatus === "COMPLETED") {
+  order.isOccupied = false; // 🟢 TABLE FREE
+}
+
+await order.save();
+
 
     // 🔥 notify customer + admin
     const io = req.app.get("io");

@@ -11,6 +11,13 @@ const orderSchema = new mongoose.Schema(
     unitCode: {
       type: String,
       required: true,
+            index: true,
+    },
+   orderType: {
+      type: String,
+      enum: ["DINE_IN", "PARCEL"],
+      default: "DINE_IN",
+      index: true,
     },
 
     items: [
@@ -37,7 +44,10 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-
+isOccupied: {
+  type: Boolean,
+  default: false,
+},
     orderStatus: {
       type: String,
       enum: ["PENDING", "APPROVED", "REJECTED", "COMPLETED"],
@@ -56,6 +66,7 @@ billNo: {
       type: Number,
       default: 1, 
     },
+
   },
   { timestamps: true }
 );
