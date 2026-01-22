@@ -122,39 +122,74 @@ export const getMonthlyIncome = async (req, res) => {
 /* ===============================
    📈 LAST 7 DAYS INCOME
    =============================== */
+/* ===============================
+   📈 WEEKLY INCOME (MON → SUN)
+   =============================== */
 export const getWeeklyIncome = async (req, res) => {
   try {
     const { businessCode } = req.params;
 
-    const last7Days = new Date();
-    last7Days.setDate(last7Days.getDate() - 6);
-    last7Days.setHours(0, 0, 0, 0);
+    // 🔹 Today
+    const today = new Date();
 
+    // 🔹 ISO week: Monday = 1
+    const day = today.getDay() === 0 ? 7 : today.getDay();
+
+    // 🔹 Monday start
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - day + 1);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // 🔹 Sunday end
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // 🔹 Aggregate orders
     const data = await Order.aggregate([
       {
         $match: {
           businessCode,
           paymentStatus: "PAID",
           orderStatus: "COMPLETED",
-          createdAt: { $gte: last7Days },
+          createdAt: { $gte: weekStart, $lte: weekEnd },
         },
       },
       {
         $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
-          },
+          _id: { $isoDayOfWeek: "$createdAt" }, // 1 = Mon, 7 = Sun
           amount: { $sum: "$totalAmount" },
         },
       },
-      { $sort: { _id: 1 } },
     ]);
 
-    res.json(data);
+    // 🔹 Day mapping
+    const days = [
+      { day: "Mon", index: 1 },
+      { day: "Tue", index: 2 },
+      { day: "Wed", index: 3 },
+      { day: "Thu", index: 4 },
+      { day: "Fri", index: 5 },
+      { day: "Sat", index: 6 },
+      { day: "Sun", index: 7 },
+    ];
+
+    // 🔹 Fill missing days with 0
+    const finalData = days.map((d) => {
+      const found = data.find((x) => x._id === d.index);
+      return {
+        day: d.day,
+        amount: found ? found.amount : 0,
+      };
+    });
+
+    res.json(finalData);
   } catch (err) {
+    console.error("Weekly income error:", err);
     res.status(500).json({ message: "Weekly income error" });
   }
 };
+
 
 
 /* ===============================
