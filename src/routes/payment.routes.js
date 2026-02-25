@@ -8,14 +8,14 @@ const paymentManuallyRoutes = express.Router();
 
 const PLAN_CONFIG = {
   CAFE: {
-    MONTHLY: { price: 499, months: 1, visible: false }, 
-    HALF_YEARLY: { price: 2499, months: 6, visible: true },
-    YEARLY: { price: 4999, months: 12, visible: true },
+    MONTHLY: { price: 350, months: 1, visible: false }, 
+    HALF_YEARLY: { price: 2000, months: 6, visible: true },
+    YEARLY: { price: 3500, months: 12, visible: true },
   },
   RESTAURANT: {
-    MONTHLY: { price: 999, months: 1, visible: false },
-    HALF_YEARLY: { price: 4999, months: 6, visible: true },
-    YEARLY: { price: 9999, months: 12, visible: true },
+    MONTHLY: { price: 500, months: 1, visible: false },
+    HALF_YEARLY: { price: 2500, months: 6, visible: true },
+    YEARLY: { price: 5000, months: 12, visible: true },
   },
 };
 

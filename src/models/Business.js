@@ -7,11 +7,11 @@ const unitSchema = new mongoose.Schema(
     unitCode: { type: String, required: true },
     unitType: {
       type: String,
-           enum: ["Table", "Room", "Counter"],
+      enum: ["Table", "Room", "Counter"],
       default: "Table",
     },
     capacity: { type: Number, default: 1 },
-     qrUrl: { type: String },
+    qrUrl: { type: String },
     qrImage: { type: String },
     isActive: { type: Boolean, default: true },
   },
@@ -30,11 +30,11 @@ const businessSchema = new mongoose.Schema(
       uppercase: true,
     },
 
-   businessType: {
-  type: String,
-  enum: ["CAFE", "RESTAURANT"],
-  required: true,
-},
+    businessType: {
+      type: String,
+      enum: ["CAFE", "RESTAURANT"],
+      required: true,
+    },
 
 
     ownerName: String,
@@ -49,39 +49,46 @@ const businessSchema = new mongoose.Schema(
     },
 
     units: [unitSchema],
-    
-   orderSettings: {
+
+    orderSettings: {
       enableItemNote: {
         type: Boolean,
         default: false, // 👈 ADMIN CONTROL
       },
     },
+
+    feedbackSettings: {
+      enableFeedback: { type: Boolean, default: false },
+      allowBeforeCompletion: { type: Boolean, default: false }
+    },
+
     isActive: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: true },
-isTrialActive: { type: Boolean, default: true },
-trialStartDate: {
-  type: Date,
-},
-trialEndDate: { type: Date },
-planType: {
-  type: String,
-  enum: ["FREE", "HALF_YEARLY", "YEARLY"],
-  default: "FREE",
-},
+    isTrialActive: { type: Boolean, default: true },
+    trialStartDate: {
+      type: Date,
+    },
+    
+    trialEndDate: { type: Date },
+    planType: {
+      type: String,
+      enum: ["FREE", "HALF_YEARLY", "YEARLY"],
+      default: "FREE",
+    },
 
 
-planStartDate: {
-  type: Date,
-},
+    planStartDate: {
+      type: Date,
+    },
 
-planEndDate: {
-  type: Date,
-},
+    planEndDate: {
+      type: Date,
+    },
 
-isPlanActive: {
-  type: Boolean,
-  default: false,
-},
+    isPlanActive: {
+      type: Boolean,
+      default: false,
+    },
 
   },
   { timestamps: true }

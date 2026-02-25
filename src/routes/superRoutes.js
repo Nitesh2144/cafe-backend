@@ -5,7 +5,8 @@ import {
   revenueGraph,
   getAllBusinesses,
   getBusinessById,
-  topBusinessesByDate
+  topBusinessesByDate,
+
 } from "../controllers/superController.js";
 import { verifyToken, isSuperAdmin } from "../middleware/auth.js";
 

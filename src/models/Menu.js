@@ -26,11 +26,25 @@ const menuSchema = new mongoose.Schema(
       min: 0,
     },
 
-    category: {
-      type: String,
-      default: "General",
+   categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
     },
 
+    subCategoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubCategory",
+    },
+
+    typeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Type",
+    },
+
+    // 🔁 OLD SUPPORT (optional, safe)
+    category: {
+      type: String,
+    },
     image: {
       type: String, // image url (optional)
     },

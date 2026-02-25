@@ -3,6 +3,93 @@ import Business from "../models/Business.js";
 import mongoose from "mongoose";
 
 /* ===============================
+   👤 GET BUSINESS PROFILE
+   =============================== */
+export const getBusinessProfile = async (req, res) => {
+  try {
+    const { businessCode } = req.params;
+
+    const business = await Business.findOne({ businessCode }).lean();
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found",
+      });
+    }
+
+    res.json({
+      businessName: business.businessName,
+      businessCode: business.businessCode,
+      businessType: business.businessType,
+
+      ownerName: business.ownerName || "",
+      ownerMobile: business.ownerMobile || "",
+      ownerEmail: business.ownerEmail || "",
+
+      planType: business.planType,
+      isPlanActive: business.isPlanActive,
+      isTrialActive: business.isTrialActive,
+      trialEndDate: business.trialEndDate,
+
+      unitsCount: business.units?.length || 0,
+
+      image: "https://i.pravatar.cc/300", // 🔥 later cloudinary se
+    });
+  } catch (err) {
+    console.error("❌ BUSINESS PROFILE ERROR:", err);
+    res.status(500).json({
+      message: "Failed to load business profile",
+    });
+  }
+};
+
+export const getTopSellingProducts = async (req, res) => {
+  try {
+    const { businessCode } = req.params;
+    const { type } = req.query; // day | month
+
+    const now = new Date();
+    let startDate;
+
+    if (type === "day") {
+      startDate = new Date(now.setHours(0, 0, 0, 0));
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const data = await Order.aggregate([
+      {
+        $match: {
+          businessCode,
+          orderStatus: "COMPLETED",
+          paymentStatus: "PAID",
+            isArchived: { $ne: true },
+          createdAt: { $gte: startDate },
+        },
+      },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.itemId",
+          name: { $first: "$items.name" },
+          totalQty: { $sum: "$items.quantity" },
+          totalAmount: {
+            $sum: {
+              $multiply: ["$items.quantity", "$items.price"],
+            },
+          },
+        },
+      },
+      { $sort: { totalQty: -1 } },
+    ]);
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load top products" });
+  }
+};
+
+/* ===============================
    📊 DASHBOARD OVERVIEW
    =============================== */
 export const getDashboardOverview = async (req, res) => {
@@ -210,6 +297,7 @@ export const getRecentOrders = async (req, res) => {
       businessCode,
       paymentStatus: "PAID",
       orderStatus: "COMPLETED",
+        isArchived: { $ne: true },
     })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -234,3 +322,18 @@ export const getRecentOrders = async (req, res) => {
   }
 };
 
+// GET /dashboard/pending-count/:businessCode
+export const getPendingOrderCount = async (req, res) => {
+  try {
+    const { businessCode } = req.params;
+
+    const count = await Order.countDocuments({
+      businessCode,
+      orderStatus: "PENDING",
+    });
+
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ message: "Pending count error" });
+  }
+};

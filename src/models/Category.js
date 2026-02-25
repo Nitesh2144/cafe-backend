@@ -2,21 +2,22 @@ import mongoose from "mongoose";
 
 const categorySchema = new mongoose.Schema(
   {
-    businessId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Business",
-      required: true,
-    },
-        businessCode: {
-      type: String,
-      required: true,
-    },
     name: {
       type: String,
       required: true,
+      trim: true,
+    },
+
+    createdBy: {
+      type: String,
+      enum: ["SUPER_ADMIN", "BUSINESS"],
+      default: "SUPER_ADMIN",
     },
   },
   { timestamps: true }
 );
+
+// Prevent duplicate category name
+categorySchema.index({ name: 1 }, { unique: true });
 
 export default mongoose.model("Category", categorySchema);

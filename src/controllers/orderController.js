@@ -8,7 +8,12 @@ import { getNextBillNumber } from "../utils/getNextBillNumber.js";
    =============================== */
 export const placeOrder = async (req, res) => {
   try {
-    const { businessCode, unitCode, items, orderType} = req.body;
+    let { businessCode, unitCode, items, orderType } = req.body;
+
+    // ✅ Normalize businessCode (avoid case mismatch)
+    if (businessCode) {
+      businessCode = String(businessCode).trim();
+    }
 
     if (!businessCode || !unitCode || !items || items.length === 0) {
       return res.status(400).json({
@@ -16,35 +21,56 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // 🔥 Business nikalo (unitName ke liye)
-    const business = await Business.findOne({ businessCode });
+    // ✅ Find Business
+    const business = await Business.findOne({
+      businessCode: businessCode,
+    });
+
     if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+      return res.status(404).json({
+        message: "Business not found",
+      });
     }
 
+    // ✅ Check Unit Exists
     const unit = business.units.find(
-      u => u.unitCode === unitCode
+      (u) => String(u.unitCode) === String(unitCode)
     );
 
-    const unitName = unit?.unitName || unitCode;
+    if (!unit) {
+      return res.status(404).json({
+        message: "Invalid unitCode",
+      });
+    }
+
+    const unitName = unit.unitName;
 
     let orderItems = [];
     let totalAmount = 0;
 
+    // ✅ Fetch all menu items in one query (FAST + SAFE)
+    const itemIds = items.map((i) => i.itemId);
+
+    const menuItems = await Menu.find({
+      _id: { $in: itemIds },
+      businessCode: businessCode,
+      isAvailable: true,
+    });
+
+    if (menuItems.length !== items.length) {
+      return res.status(404).json({
+        message: "One or more menu items not found",
+      });
+    }
+
     for (let i = 0; i < items.length; i++) {
       const { itemId, quantity, note } = items[i];
 
-      const menuItem = await Menu.findOne({
-        _id: itemId,
-        businessCode,
-        isAvailable: true,
-      });
+      const menuItem = menuItems.find(
+        (m) => String(m._id) === String(itemId)
+      );
 
-      if (!menuItem) {
-        return res.status(404).json({
-          message: "Menu item not found or unavailable",
-        });
-      }
+      if (!menuItem) continue;
 
       totalAmount += menuItem.price * quantity;
 
@@ -60,34 +86,43 @@ export const placeOrder = async (req, res) => {
     const newOrder = new Order({
       businessCode,
       unitCode,
-  orderType: orderType || "DINE_IN",
+      orderType: orderType || "DINE_IN",
+      businessName: business.businessName,
       items: orderItems,
       totalAmount,
       customerCount: 1,
-        isOccupied: true,
+      isOccupied: true,
     });
 
     await newOrder.save();
 
-    // 🔥 SOCKET EMIT (FIXED)
     const io = req.app.get("io");
+
     io.to(businessCode).emit("new-order", {
       ...newOrder.toObject(),
-      unitName, // ✅ REAL NAME
+      unitName,
     });
 
-    res.status(201).json({
+    io.to(businessCode).emit("dashboard-update", {
+      type: "NEW_ORDER",
+    });
+
+    return res.status(201).json({
       message: "Order placed successfully",
       order: {
         ...newOrder.toObject(),
         unitName,
       },
     });
+
   } catch (error) {
     console.error("❌ Place Order Error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
+
 
 
 export const getOrdersByBusiness = async (req, res) => {
@@ -151,32 +186,41 @@ export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { orderStatus: status },
+      { new: true }
+    );
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    order.orderStatus = status;
-    await order.save();
-
-    // 🔥 SOCKET EMIT (CORRECT WAY)
     const io = req.app.get("io");
 
     io.to(order.businessCode).emit("order-status-update", {
       orderId: order._id,
       status: order.orderStatus,
-        paymentStatus: order.paymentStatus,
+      paymentStatus: order.paymentStatus,
     });
+
+    if (status === "COMPLETED") {
+      io.to(order.businessCode).emit("dashboard-update", {
+        type: "ORDER_COMPLETED",
+      });
+    }
 
     res.json({
       message: "Order status updated",
       order,
     });
+
   } catch (error) {
     console.error("Update order status error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const markOrderPaid = async (req, res) => {
   try {
@@ -187,36 +231,47 @@ export const markOrderPaid = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    let updateData = {
+      paymentStatus: "PAID",
+    };
+
     // ✅ Bill number sirf ek baar generate ho
     if (!order.billNo) {
-      order.billNo = await getNextBillNumber(order.businessCode);
+      updateData.billNo = await getNextBillNumber(order.businessCode);
     }
 
-order.paymentStatus = "PAID";
+    // ✅ Agar completed hai to table free karo
+    if (order.orderStatus === "COMPLETED") {
+      updateData.isOccupied = false;
+    }
 
-// ✅ agar order completed bhi hai to free karo
-if (order.orderStatus === "COMPLETED") {
-  order.isOccupied = false; // 🟢 TABLE FREE
-}
+    // 🔥 SAVE ki jagah direct update
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      updateData,
+      { new: true }
+    );
 
-await order.save();
-
-
-    // 🔥 notify customer + admin
     const io = req.app.get("io");
-    io.to(order.businessCode).emit("payment-updated", {
-      orderId: order._id,
+
+    io.to(updatedOrder.businessCode).emit("payment-updated", {
+      orderId: updatedOrder._id,
       paymentStatus: "PAID",
-      billNo: order.billNo, // optional (frontend use kare to)
+      billNo: updatedOrder.billNo,
+    });
+
+    io.to(updatedOrder.businessCode).emit("dashboard-update", {
+      type: "PAYMENT_PAID",
     });
 
     res.json({
       message: "Payment marked as PAID",
-      order,
+      order: updatedOrder,
     });
+
   } catch (err) {
     console.error("❌ Mark Order Paid Error:", err);
-    res.status(500).json({ message: "Payment update failed" });
+    res.status(500).json({ message: err.message });
   }
 };
 

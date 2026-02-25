@@ -58,6 +58,16 @@ paymentStatus: {
   enum: ["UNPAID", "PAID"],
   default: "UNPAID",
 },
+isArchived: {
+  type: Boolean,
+  default: false,
+  index: true,
+},
+    businessName: {
+      type: String,
+      required: true,
+    },
+
 billNo: {
   type: Number,
 },

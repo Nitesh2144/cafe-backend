@@ -1,5 +1,5 @@
 import Business from "../models/Business.js";
-
+import Order from "../models/Order.js"
 /* ================= ADD UNIT ================= */
 export const addUnit = async (req, res) => {
   try {
@@ -26,18 +26,22 @@ export const addUnit = async (req, res) => {
       });
     }
 
-    business.units.push({
-      unitName,
-      unitCode,
-      unitType,
-      capacity,
-    });
+const newUnit = {
+  unitName,
+  unitCode,
+  unitType,
+  capacity,
+};
 
-    await business.save();
+business.units.push(newUnit);
+await business.save();
+
+// 🔥 get last inserted subdocument
+const addedUnit = business.units[business.units.length - 1];
 
     res.status(201).json({
       message: "Unit added successfully",
-      units: business.units,
+   unit: addedUnit,
     });
   } catch (error) {
     console.error("❌ Add unit error:", error);
@@ -109,7 +113,6 @@ export const getUnits = async (req, res) => {
     const { businessId, businessCode } = req.query;
 
     let business;
-
     if (businessId) {
       business = await Business.findById(businessId);
     } else if (businessCode) {
@@ -120,8 +123,30 @@ export const getUnits = async (req, res) => {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    res.json(business.units);
+    // 🔥 STEP 1: Active orders nikalo
+const activeOrders = await Order.find({
+  businessCode: business.businessCode,
+  orderType: "DINE_IN",
+  paymentStatus: "UNPAID",
+  orderStatus: { $in: ["PENDING", "APPROVED"] },
+}).lean();
+
+    
+
+    // 🔥 STEP 2: Occupied unitCode set
+    const occupiedUnits = new Set(
+      activeOrders.map(o => o.unitCode)
+    );
+
+    // 🔥 STEP 3: units ke sath isOccupied attach karo
+    const unitsWithStatus = business.units.map(u => ({
+      ...u.toObject(),
+      isOccupied: occupiedUnits.has(u.unitCode),
+    }));
+
+    res.json(unitsWithStatus);
   } catch (error) {
+    console.error("❌ Get Units Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

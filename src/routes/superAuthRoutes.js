@@ -2,8 +2,9 @@ import express from "express";
 import {
   superAdminRegister,
   superAdminLogin,
+  deleteBusiness
 } from "../controllers/superAuthController.js";
-
+import { verifyToken, isSuperAdmin } from "../middleware/auth.js";
 const superAuthRoutes = express.Router();
 
 /**
@@ -17,5 +18,10 @@ superAuthRoutes.post("/register", superAdminRegister);
  */
 superAuthRoutes.post("/login", superAdminLogin);
 
-
+superAuthRoutes.delete(
+  "/delete/:businessId",
+  verifyToken,
+  isSuperAdmin,
+  deleteBusiness
+);
 export default superAuthRoutes;

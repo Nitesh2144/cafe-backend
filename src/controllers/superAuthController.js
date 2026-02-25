@@ -1,8 +1,10 @@
 import SuperAdmin from "../models/SuperAdmin.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
-
+import Order from "../models/Order.js"
+import Menu from "../models/Menu.js";
+import Business from "../models/Business.js"
+import BusinessUser from "../models/BusinessUser.js"
 export const superAdminLogin = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -79,5 +81,39 @@ export const superAdminRegister = async (req, res) => {
     res.status(500).json({
       message: "Super admin registration error",
     });
+  }
+};
+
+
+/* ================= DELETE BUSINESS (FULL WIPE) ================= */
+export const deleteBusiness = async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    // 🔐 ONLY ADMIN ALLOWED
+if (req.user.role !== "SUPER_ADMIN") {
+  return res.status(403).json({ message: "Unauthorized" });
+}
+
+
+    const business = await Business.findById(businessId);
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    // 🔥 DELETE EVERYTHING RELATED
+    await Promise.all([
+      BusinessUser.deleteMany({ businessId }),
+      Order.deleteMany({ businessCode: business.businessCode }),
+      Menu.deleteMany({ businessCode: business.businessCode }),
+      Business.findByIdAndDelete(businessId),
+    ]);
+
+    res.json({
+      message: "Business and all related data deleted successfully",
+    });
+  } catch (error) {
+    console.error("❌ Delete business error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

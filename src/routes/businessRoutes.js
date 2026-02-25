@@ -5,7 +5,7 @@ import {
     createStaff,
      listStaff,
     resetStaffPassword,
-  deleteStaff
+  deleteStaff,
   } from "../controllers/businessController.js";
 import { protect, onlyAdmin } from "../middleware/auth.js";
 
@@ -35,5 +35,8 @@ entryRouter.delete(
   onlyAdmin,
   deleteStaff
 );
+
+
+
 
 export default entryRouter;

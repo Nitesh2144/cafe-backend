@@ -3,7 +3,8 @@ node_modules/
 
 # Environment variables
 .env
-
+backend/src/config/firebaseServiceAccount.json
+./src/config/firebaseServiceAccount.json
 # Logs
 logs
 *.log

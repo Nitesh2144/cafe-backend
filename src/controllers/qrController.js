@@ -55,3 +55,43 @@ const qrUrl = `${baseUrl}/?b=${business.businessCode}&u=${unit.unitCode}`;
     res.status(500).json({ message: "Server error" });
   }
 };
+export const generateAllQR = async (req, res) => {
+  try {
+    const { businessId } = req.query;
+
+    if (!businessId) {
+      return res.status(400).json({ message: "businessId required" });
+    }
+
+    const business = await Business.findById(businessId);
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    const qrList = [];
+
+    for (let unit of business.units) {
+      const qrUrl = `${baseUrl}/?b=${business.businessCode}&u=${unit.unitCode}`;
+
+      const qrImage = await QRCode.toDataURL(qrUrl);
+
+      unit.qrUrl = qrUrl;
+      unit.qrImage = qrImage;
+
+      qrList.push({
+        unitName: unit.unitName,
+        unitCode: unit.unitCode,
+        qrImage,
+      });
+    }
+
+    await business.save();
+
+    res.json(qrList);
+  } catch (error) {
+    console.error("❌ Generate All QR Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
