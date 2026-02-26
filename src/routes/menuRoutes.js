@@ -24,6 +24,8 @@ import {
   getAllCategoriesForSuperAdmin,
   updateType, 
   deleteType,
+  deleteCategory,
+  deleteSubCategory,
   getUsedCategoriesByBusinessCode
 } from "../controllers/menuController.js";
 import { menuUpload } from "../middleware/menuUpload.js";
@@ -74,9 +76,10 @@ menuRoutes.post("/generate-image", async (req, res) => {
 
 
 
-
+menuRoutes.delete("/category/:categoryId", deleteCategory);
 menuRoutes.post("/add/categorie", addCategory );
 menuRoutes.post("/subcategory", addSubCategory);
+menuRoutes.delete("/subcategory/:id", deleteSubCategory);
 menuRoutes.get(
   "/subcategories/:categoryId",
   getSubCategories

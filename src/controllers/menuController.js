@@ -520,7 +520,18 @@ export const updateType = async (req, res) => {
     res.status(500).json({ message: "Update failed" });
   }
 };
+export const deleteSubCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    await Type.deleteMany({ subCategoryId: id });
+    await SubCategory.findByIdAndDelete(id);
+
+    res.json({ message: "SubCategory deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Delete failed" });
+  }
+};
 export const deleteType = async (req, res) => {
   try {
     const { id } = req.params;
