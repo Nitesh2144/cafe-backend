@@ -228,41 +228,50 @@ export const deleteCategory = async (req, res) => {
     const { categoryId } = req.params;
 
     if (!categoryId) {
-      return res.status(400).json({
-        message: "categoryId is required",
-      });
+      return res.status(400).json({ message: "categoryId required" });
     }
 
-    // 1️⃣ Check category exists
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(404).json({
-        message: "Category not found",
-      });
+      return res.status(404).json({ message: "Category not found" });
     }
 
-    // 2️⃣ Get all subcategories under this category
+    // 1️⃣ Get all subcategories
     const subCategories = await SubCategory.find({ categoryId });
 
-    const subCategoryIds = subCategories.map(sub => sub._id);
+    const subIds = subCategories.map(sub => sub._id);
 
-    // 3️⃣ Delete all types under those subcategories
-    await Type.deleteMany({
-      subCategoryId: { $in: subCategoryIds },
+    // 2️⃣ Get all types under those subcategories
+    const types = await Type.find({
+      subCategoryId: { $in: subIds },
     });
 
-    // 4️⃣ Delete all subcategories
+    // 3️⃣ Delete images from Cloudinary
+    for (const type of types) {
+      for (const img of type.images) {
+        if (img.public_id) {
+          await cloudinary.uploader.destroy(img.public_id);
+        }
+      }
+    }
+
+    // 4️⃣ Delete types
+    await Type.deleteMany({
+      subCategoryId: { $in: subIds },
+    });
+
+    // 5️⃣ Delete subcategories
     await SubCategory.deleteMany({ categoryId });
 
-    // 5️⃣ Delete category
+    // 6️⃣ Delete category
     await Category.findByIdAndDelete(categoryId);
 
     res.json({
-      message: "Category, SubCategories and Types deleted successfully",
+      message: "Category + SubCategories + Types + Images deleted successfully",
     });
 
   } catch (error) {
-    console.error("❌ Delete category error:", error);
+    console.error("Delete category error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -524,11 +533,28 @@ export const deleteSubCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1️⃣ Find all types under this subcategory
+    const types = await Type.find({ subCategoryId: id });
+
+    // 2️⃣ Delete images from Cloudinary
+    for (const type of types) {
+      for (const img of type.images) {
+        if (img.public_id) {
+          await cloudinary.uploader.destroy(img.public_id);
+        }
+      }
+    }
+
+    // 3️⃣ Delete types
     await Type.deleteMany({ subCategoryId: id });
+
+    // 4️⃣ Delete subcategory
     await SubCategory.findByIdAndDelete(id);
 
-    res.json({ message: "SubCategory deleted" });
+    res.json({ message: "SubCategory + Types + Images deleted successfully" });
+
   } catch (err) {
+    console.error("Delete sub category error:", err);
     res.status(500).json({ message: "Delete failed" });
   }
 };
