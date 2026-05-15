@@ -303,8 +303,8 @@ export const addMenuItem = async (req, res) => {
 let imageUrl = "";
 
 // 🟢 If frontend sent generated image URL
-if (req.body.generatedImageUrl) {
-  imageUrl = req.body.generatedImageUrl;
+if (req.body.imageUrl) {
+  imageUrl = req.body.imageUrl;
 }
 
 // 🟢 If real file uploaded from gallery

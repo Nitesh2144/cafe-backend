@@ -10,8 +10,8 @@ import planCheckMiddleware from "../middleware/planCheck.js";
 
 const orderRoutes = express.Router();
 orderRoutes.post("/place", placeOrder);
-orderRoutes.get("/:businessCode",  planCheckMiddleware, getOrdersByBusiness);
 orderRoutes.get("/customers/:businessCode", getCustomerCount);
+orderRoutes.get("/:businessCode",  planCheckMiddleware, getOrdersByBusiness);
 orderRoutes.put("/status/:orderId", updateOrderStatus);
 orderRoutes.put("/pay/:orderId", markOrderPaid);
 
