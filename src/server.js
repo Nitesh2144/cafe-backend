@@ -21,7 +21,6 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import superAuthRoutes from "./routes/superAuthRoutes.js";
 import superRoutes from "./routes/superRoutes.js";
-import paymentManuallyRoutes from "./routes/payment.routes.js";
 import invoiceConfigRoutes from "./routes/invoiceConfigRoutes.js"
 import feedbackRoutes from "./routes/feedbackRoutes.js"
 import fcmRoutes from "./routes/fcm.routes.js";
@@ -75,7 +74,6 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/super/auth", superAuthRoutes);
 app.use("/api/super", superRoutes);
-app.use("/api/manpayment", paymentManuallyRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/fcm", fcmRoutes);
 
@@ -85,5 +83,5 @@ app.get("/", (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://10.172.212.238:${PORT}`);
+  console.log(`🚀 Server running on http://10.37.221.238:${PORT}`);
 });

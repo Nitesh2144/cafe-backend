@@ -1,40 +1,62 @@
 import Business from "../models/Business.js";
-import { isPlanValid } from "../utils/planUtils.js";
-const planCheckMiddleware = async (req, res, next) => {
+
+const planCheckMiddleware = async (
+  req,
+  res,
+  next
+) => {
+
   const { businessCode } = req.params;
 
-  const business = await Business.findOne({ businessCode });
+  const business = await Business.findOne({
+    businessCode,
+  });
 
   if (!business) {
-    return res.status(404).json({ message: "Business not found" });
+    return res.status(404).json({
+      message: "Business not found",
+    });
   }
 
-if (business.isTrialActive && business.trialEndDate) {
-  if (new Date() <= business.trialEndDate) {
-    req.business = business;
-    return next();
-  } else {
-    // 🔥 Trial expired → update DB
+  // ✅ TRIAL CHECK
+  if (
+    business.isTrialActive &&
+    business.trialEndDate
+  ) {
+
+    if (new Date() <= business.trialEndDate) {
+      req.business = business;
+      return next();
+    }
+
+    // 🔥 Trial expired
     business.isTrialActive = false;
+
     await business.save();
   }
-}
 
+  // ✅ PAID PLAN CHECK
+  if (
+    business.isPlanActive &&
+    business.planEndDate
+  ) {
 
-  // ✅ Allow during active paid plan
-  if (business.isPlanActive && business.planEndDate) {
     if (new Date() <= business.planEndDate) {
       req.business = business;
       return next();
     }
+
+    // 🔥 Plan expired
+    business.isPlanActive = false;
+
+    await business.save();
   }
 
   return res.status(403).json({
     planExpired: true,
-    message: "Plan expired. Please renew to accept orders.",
+    message:
+      "Plan expired. Please renew to accept orders.",
   });
 };
-
-
 
 export default planCheckMiddleware;

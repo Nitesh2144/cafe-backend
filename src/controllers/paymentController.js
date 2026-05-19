@@ -11,37 +11,51 @@ export const createPaymentOrder = async (req, res) => {
   try {
     const { businessCode, planType } = req.body;
 
-    const amount =
-      planType === "CAFE" ? 49900 :
-      planType === "RESTAURANT" ? 99900 : null;
+    let amount = 0;
 
-    if (!amount) {
-      return res.status(400).json({ message: "Invalid plan" });
+    // ✅ PLAN PRICE
+    if (planType === "HALF_YEARLY") {
+      amount = 100; // ₹3000
+    } else if (planType === "YEARLY") {
+      amount = 300; // ₹3500
+    } else {
+      return res.status(400).json({
+        message: "Invalid plan type",
+      });
     }
 
     const business = await Business.findOne({ businessCode });
+
     if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+      return res.status(404).json({
+        message: "Business not found",
+      });
     }
 
     const order = await razorpay.orders.create({
       amount,
       currency: "INR",
+
       receipt: `receipt_${businessCode}_${Date.now()}`,
+
       notes: {
-    businessCode,
-    planType, // CAFE / RESTAURANT
-  },
+        businessCode,
+        planType,
+      },
     });
 
     res.json({
+      success: true,
       orderId: order.id,
       amount,
       key: process.env.RAZORPAY_KEY_ID,
     });
   } catch (err) {
-    console.error("Create payment error:", err);
-    res.status(500).json({ message: "Payment init failed" });
+    console.log(err);
+
+    res.status(500).json({
+      message: "Payment init failed",
+    });
   }
 };
 
@@ -56,33 +70,71 @@ export const verifyAndActivatePlan = async (req, res) => {
       planType,
     } = req.body;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    // ✅ VERIFY SIGNATURE
+    const body =
+      razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac(
+        "sha256",
+        process.env.RAZORPAY_KEY_SECRET
+      )
       .update(body)
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Payment verification failed" });
+      return res.status(400).json({
+        message: "Payment verification failed",
+      });
     }
 
-    const business = await Business.findOne({ businessCode });
+    const business = await Business.findOne({
+      businessCode,
+    });
+
     if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+      return res.status(404).json({
+        message: "Business not found",
+      });
     }
 
+    // ✅ PLAN DATES
     const startDate = new Date();
+
     const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1);
+
+    if (planType === "HALF_YEARLY") {
+      endDate.setMonth(endDate.getMonth() + 6);
+    }
+
+    if (planType === "YEARLY") {
+      endDate.setFullYear(
+        endDate.getFullYear() + 1
+      );
+    }
+
+    // ✅ SAVE PLAN
+    business.planType = planType;
+    business.planStartDate = startDate;
+    business.planEndDate = endDate;
+    business.isPlanActive = true;
+
+    await business.save();
+
+    // OPTIONAL PAYMENT SAVE
+    // create payment history here
 
     res.json({
-      message: "Payment successful. Plan activated.",
+      success: true,
+      message: "Plan activated successfully",
       planEndDate: endDate,
     });
   } catch (err) {
-    console.error("Verify payment error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 

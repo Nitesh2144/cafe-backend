@@ -30,7 +30,8 @@ export const getBusinessProfile = async (req, res) => {
       isPlanActive: business.isPlanActive,
       isTrialActive: business.isTrialActive,
       trialEndDate: business.trialEndDate,
-
+planStartDate: business.planStartDate,
+planEndDate: business.planEndDate,
       unitsCount: business.units?.length || 0,
 
       image: "https://i.pravatar.cc/300", // 🔥 later cloudinary se
