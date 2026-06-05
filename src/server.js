@@ -23,6 +23,7 @@ import superAuthRoutes from "./routes/superAuthRoutes.js";
 import superRoutes from "./routes/superRoutes.js";
 import invoiceConfigRoutes from "./routes/invoiceConfigRoutes.js"
 import feedbackRoutes from "./routes/feedbackRoutes.js"
+import locationRoutes from "./routes/locationRoutes.js";
 import fcmRoutes from "./routes/fcm.routes.js";
 import "./cron/deleteOldOrders.js";
 
@@ -76,7 +77,7 @@ app.use("/api/super/auth", superAuthRoutes);
 app.use("/api/super", superRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/fcm", fcmRoutes);
-
+app.use("/api/location", locationRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");

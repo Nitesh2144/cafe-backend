@@ -75,7 +75,7 @@ const invoiceConfigSchema = new mongoose.Schema(
     paperSize: {
       type: String,
       enum: ["A4", "80mm", "58mm"],
-      default: "A4",
+      default: "58mm",
     },
   },
   { timestamps: true }

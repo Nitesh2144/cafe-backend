@@ -26,7 +26,8 @@ import {
   deleteType,
   deleteCategory,
   deleteSubCategory,
-  getUsedCategoriesByBusinessCode
+  getUsedCategoriesByBusinessCode,
+  searchMenuPath
 } from "../controllers/menuController.js";
 import { menuUpload } from "../middleware/menuUpload.js";
 import { typeUpload } from "../middleware/typeUpload.js";
@@ -122,5 +123,5 @@ menuRoutes.get("/admin", getMenuByBusinessId);
 // Customer (QR)
 menuRoutes.get("/by-business/:businessCode", getMenuByBusinessCode);
 menuRoutes.get("/categories-all", getAllCategoriesForSuperAdmin);
-
+menuRoutes.get("/search-menu-path", searchMenuPath);
 export default menuRoutes;

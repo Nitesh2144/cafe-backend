@@ -49,14 +49,38 @@ export const getTopSellingProducts = async (req, res) => {
     const { businessCode } = req.params;
     const { type } = req.query; // day | month
 
-    const now = new Date();
-    let startDate;
+const now = new Date();
 
-    if (type === "day") {
-      startDate = new Date(now.setHours(0, 0, 0, 0));
-    } else {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
+let startDate;
+let endDate;
+
+if (type === "day") {
+  startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+
+  endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+} else {
+  startDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+    0,
+    0,
+    0,
+    0
+  );
+
+  endDate = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    1,
+    0,
+    0,
+    0,
+    0
+  );
+}
 
     const data = await Order.aggregate([
       {
@@ -65,7 +89,10 @@ export const getTopSellingProducts = async (req, res) => {
           orderStatus: "COMPLETED",
           paymentStatus: "PAID",
             isArchived: { $ne: true },
-          createdAt: { $gte: startDate },
+       createdAt: {
+  $gte: startDate,
+  $lt: endDate,
+},
         },
       },
       { $unwind: "$items" },

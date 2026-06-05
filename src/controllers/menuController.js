@@ -611,3 +611,42 @@ export const getUsedCategoriesByBusinessCode = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+export const searchMenuPath = async (req, res) => {
+  try {
+    const { businessCode, search } = req.query;
+
+    if (!businessCode || !search) {
+      return res.json([]);
+    }
+
+    const items = await Menu.find({
+      businessCode: businessCode.toUpperCase(),
+      $or: [
+        { name: { $regex: `^${search}`, $options: "i" } }
+      ]
+    })
+      .populate("categoryId", "name")
+      .populate("subCategoryId", "name")
+      .populate("typeId", "name")
+      .limit(20);
+
+    const result = items.map(item => ({
+      menuId: item._id,
+      itemName: item.name,
+      category: item.categoryId?.name || "",
+      subCategory: item.subCategoryId?.name || "",
+      type: item.typeId?.name || "",
+      categoryId: item.categoryId?._id,
+      subCategoryId: item.subCategoryId?._id,
+      typeId: item.typeId?._id,
+    }));
+
+    res.json(result);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Search failed"
+    });
+  }
+};

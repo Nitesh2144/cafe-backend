@@ -10,22 +10,49 @@ invoiceConfigRoutes.get("/:businessCode", async (req, res) => {
     const { businessCode } = req.params;
 
     // 1️⃣ Invoice Config
-    const config = await InvoiceConfig.findOne({ businessCode });
-   // 2️⃣ Business Name
-    const business = await Business.findOne({ businessCode }).select(
-      "businessName"
-    );
+ const config = await InvoiceConfig.findOne({ businessCode });
+
+const business = await Business.findOne({ businessCode }).select(
+  "businessName ownerMobile address"
+);
 
     // 3️⃣ Last Bill No (for display / print)
     const lastOrder = await Order.findOne({ businessCode })
       .sort({ createdAt: -1 })
       .select("billNo");
 
-    res.json({
-      ...(config?.toObject() || {}),
-      businessName: business?.businessName || "",
-      billNo: lastOrder?.billNo || "",
-    });
+res.json({
+  ...(config?.toObject() || {}),
+
+  businessName:
+    config?.businessName ||
+    business?.businessName ||
+    "",
+
+  businessPhone:
+    config?.businessPhone ||
+    business?.ownerMobile ||
+    "",
+
+  businessAddress:
+    config?.businessAddress || {
+      street: business?.address?.street || "",
+      area: business?.address?.area || "",
+      city: business?.address?.city || "",
+      state: business?.address?.state || "",
+      pincode: business?.address?.pincode || "",
+    },
+    invoicePrefix:
+  config?.invoicePrefix ||
+  "INV-",
+  paperSize:
+  config?.paperSize ||
+  "58mm",
+footerText:
+  config?.footerText ||
+  "Thank you for your visit!",
+  billNo: lastOrder?.billNo || "",
+});
   } catch (err) {
     res.status(500).json({ message: "Failed to load config" });
   }
