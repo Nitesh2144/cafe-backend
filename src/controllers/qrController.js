@@ -33,7 +33,7 @@ export const generateUnitQR = async (req, res) => {
     }
 // process.env.FRONTEND_URL || 
     // 🔗 QR URL
-    const baseUrl = "http://10.37.221.238:5173";
+    const baseUrl = process.env.FRONTEND_URL || "http://10.37.221.238:5173";
 const qrUrl = `${baseUrl}/?b=${business.businessCode}&u=${unit.unitCode}`;
 
     // 🎨 Generate QR
