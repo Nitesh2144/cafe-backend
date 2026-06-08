@@ -90,6 +90,8 @@ export const placeOrder = async (req, res) => {
       businessName: business.businessName,
       items: orderItems,
       totalAmount,
+        discount: 0,
+  finalAmount: totalAmount,
       customerCount: 1,
       isOccupied: true,
     });
@@ -220,7 +222,34 @@ export const updateOrderStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+export const generateBillNumber = async (req, res) => {
+  try {
+    const { orderId } = req.params;
 
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    if (!order.billNo) {
+      order.billNo = await getNextBillNumber(
+        order.businessCode
+      );
+      await order.save();
+    }
+
+    res.json({
+      billNo: order.billNo,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
 
 export const markOrderPaid = async (req, res) => {
   try {
@@ -275,6 +304,39 @@ export const markOrderPaid = async (req, res) => {
   }
 };
 
+export const applyDiscount = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { discount } = req.body;
 
+    const order = await Order.findById(orderId);
 
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    const discountAmount = Number(discount) || 0;
+
+    order.discount = discountAmount;
+
+    order.finalAmount = Math.max(
+      0,
+      order.totalAmount - discountAmount
+    );
+
+    await order.save();
+
+    res.json({
+      message: "Discount applied",
+      order,
+    });
+  } catch (err) {
+    console.error("Discount Error:", err);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
 

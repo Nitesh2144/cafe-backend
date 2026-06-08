@@ -74,7 +74,7 @@ if (exists) {
     feedback = await Feedback.findByIdAndUpdate(
       exists._id,
       {
-        rating: Number(rating),
+      rating: Number(rating || 5),
         message,
         isAfterCompletion: true,
       },
@@ -91,7 +91,7 @@ if (exists) {
   feedback = await Feedback.create({
     businessCode,
     orderId,
-   rating: isAfterCompletion ? Number(rating) : null,
+   rating: isAfterCompletion ? Number(rating || 5) : 5,
     message,
     isAfterCompletion: false,
   });

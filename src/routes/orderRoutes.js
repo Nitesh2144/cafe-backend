@@ -5,6 +5,8 @@ import {
   getCustomerCount,
   updateOrderStatus,
   markOrderPaid,
+  applyDiscount,
+  generateBillNumber
 } from "../controllers/orderController.js";
 import planCheckMiddleware from "../middleware/planCheck.js";
 
@@ -14,5 +16,12 @@ orderRoutes.get("/customers/:businessCode", getCustomerCount);
 orderRoutes.get("/:businessCode",  planCheckMiddleware, getOrdersByBusiness);
 orderRoutes.put("/status/:orderId", updateOrderStatus);
 orderRoutes.put("/pay/:orderId", markOrderPaid);
-
+orderRoutes.put(
+  "/discount/:orderId",
+  applyDiscount
+);
+orderRoutes.put(
+  "/generate-bill/:orderId",
+  generateBillNumber
+);
 export default orderRoutes;

@@ -19,7 +19,7 @@ const feedbackSchema = new mongoose.Schema(
       type: Number,
       min: 1,
       max: 5,
-      default: null, // early feedback ke liye
+      default: 5, // early feedback ke liye
     },
 
     message: {
