@@ -15,9 +15,9 @@ export const createPaymentOrder = async (req, res) => {
 
     // ✅ PLAN PRICE
     if (planType === "HALF_YEARLY") {
-      amount = 100; // ₹3000
+      amount = 200000; // ₹3000
     } else if (planType === "YEARLY") {
-      amount = 300; // ₹3500
+      amount = 350000; // ₹3500
     } else {
       return res.status(400).json({
         message: "Invalid plan type",
