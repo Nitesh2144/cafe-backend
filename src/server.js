@@ -84,5 +84,5 @@ app.get("/", (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on  http://10.129.134.238:${PORT}`);
+  console.log(`🚀 Server running on http://10.129.134.238:${PORT}`);
 });
