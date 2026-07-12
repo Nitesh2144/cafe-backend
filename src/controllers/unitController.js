@@ -3,32 +3,26 @@ import Order from "../models/Order.js"
 /* ================= ADD UNIT ================= */
 export const addUnit = async (req, res) => {
   try {
-    const { businessId, unitName, unitCode, unitType, capacity } = req.body;
+const {
+  businessId,
+  unitName,
+  unitType,
+  capacity
+} = req.body;
 
-    if (!businessId || !unitName || !unitCode) {
-      return res.status(400).json({
-        message: "businessId, unitName and unitCode are required",
-      });
-    }
+if (!businessId || !unitName) {
+  return res.status(400).json({
+    message: "businessId and unitName are required",
+  });
+}
 
     const business = await Business.findById(businessId);
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    // duplicate unitCode check
-    const exists = business.units.find(
-      (u) => u.unitCode === unitCode
-    );
-    if (exists) {
-      return res.status(400).json({
-        message: "Unit code already exists",
-      });
-    }
-
 const newUnit = {
   unitName,
-  unitCode,
   unitType,
   capacity,
 };

@@ -128,7 +128,6 @@ export const registerBusinessWithUser = async (req, res) => {
     const {
       // business
       businessName,
-      businessCode,
       businessType,
       ownerName,
       ownerMobile,
@@ -144,7 +143,6 @@ export const registerBusinessWithUser = async (req, res) => {
 
     if (
       !businessName ||
-      !businessCode ||
       !ownerName ||
       !ownerMobile ||
       !ownerEmail ||
@@ -157,13 +155,6 @@ export const registerBusinessWithUser = async (req, res) => {
       });
     }
 
-    // unique business
-    const businessExists = await Business.findOne({ businessCode });
-    if (businessExists) {
-      return res.status(400).json({
-        message: "Business code already exists",
-      });
-    }
 
     // unique user
     const userExists = await BusinessUser.findOne({
@@ -181,7 +172,6 @@ trialEnd.setDate(trialEnd.getDate() + 8);
     // create business (units empty)
     const business = await Business.create({
       businessName,
-      businessCode,
       businessType,
       ownerName,
       ownerMobile,
@@ -213,16 +203,24 @@ const token = jwt.sign(
   { expiresIn: process.env.JWT_EXPIRES }
 );
 
-    res.status(201).json({
-      message: "Business & admin user registered successfully",
-       token,
-      businessId: business._id,
-      adminUser: {
-        id: businessUser._id,
-        username: businessUser.username,
-        email: businessUser.email,
-      },
-    });
+   res.status(201).json({
+  message:
+    "Business & admin user registered successfully",
+  token,
+  businessId:
+    business._id,
+  businessCode:
+    business.businessCode,
+
+  adminUser: {
+    id:
+      businessUser._id,
+    username:
+      businessUser.username,
+    email:
+      businessUser.email,
+  },
+});
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Server error" });

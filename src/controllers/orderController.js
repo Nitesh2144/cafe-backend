@@ -1,14 +1,15 @@
 import Order from "../models/Order.js";
 import Menu from "../models/Menu.js";
 import Business from "../models/Business.js";
+import BusinessUser from "../models/BusinessUser.js";
 import { getNextBillNumber } from "../utils/getNextBillNumber.js";
-
+import admin from "../config/firebase.js";
 /* ===============================
    🛒 PLACE ORDER (BusinessCode)
    =============================== */
 export const placeOrder = async (req, res) => {
   try {
-    let { businessCode, unitCode, items, orderType } = req.body;
+    let { businessCode, unitCode, items, orderType, customer, } = req.body;
 
     // ✅ Normalize businessCode (avoid case mismatch)
     if (businessCode) {
@@ -84,9 +85,11 @@ export const placeOrder = async (req, res) => {
     }
 
     const newOrder = new Order({
+        businessId: business._id,  
       businessCode,
       unitCode,
       orderType: orderType || "DINE_IN",
+        customer, 
       businessName: business.businessName,
       items: orderItems,
       totalAmount,
@@ -95,15 +98,75 @@ export const placeOrder = async (req, res) => {
       customerCount: 1,
       isOccupied: true,
     });
+await newOrder.save();
 
-    await newOrder.save();
+// 🔔 Push Notification
+// 🔔 Send notification to Admin + Staff
 
-    const io = req.app.get("io");
+try {
 
-    io.to(businessCode).emit("new-order", {
-      ...newOrder.toObject(),
-      unitName,
-    });
+  const users = await BusinessUser.find({
+    businessId: business._id,
+    role: {
+      $in: ["admin", "staff"],
+    },
+    fcmToken: {
+      $ne: "",
+    },
+    
+  });
+
+  const tokens = users
+    .map(user => user.fcmToken)
+    .filter(Boolean);
+
+  console.log("Users:", users.length);
+  console.log("Tokens:", tokens);
+
+  if (tokens.length) {
+
+    const response =
+      await admin.messaging().sendEachForMulticast({
+
+        tokens,
+
+        notification: {
+          title: "🍽️ New Order",
+          body: `Table ${unitName} placed an order`,
+        },
+
+        android: {
+          priority: "high",
+          notification: {
+            channelId: "background_orders",
+            sound: "new_order",
+          },
+        },
+
+        data: {
+          orderId: newOrder._id.toString(),
+          screen: "AdminOrders",
+          businessCode,
+        },
+
+      });
+
+    console.log(response);
+
+  }
+
+} catch (err) {
+
+  console.log(err);
+
+}
+
+const io = req.app.get("io");
+
+io.to(businessCode).emit("new-order", {
+  ...newOrder.toObject(),
+  unitName,
+});
 
     io.to(businessCode).emit("dashboard-update", {
       type: "NEW_ORDER",
@@ -205,7 +268,46 @@ export const updateOrderStatus = async (req, res) => {
       status: order.orderStatus,
       paymentStatus: order.paymentStatus,
     });
+if (status === "APPROVED") {
+const staffs = await BusinessUser.find({
+  businessId: order.businessId,
+  role: "staff",
+  fcmToken: { $ne: "" },
+});
 
+const tokens = staffs
+  .map(x => x.fcmToken)
+  .filter(Boolean);
+
+  if (tokens.length) {
+    await admin.messaging().sendEachForMulticast({
+      tokens,
+
+      notification: {
+        title: "👨‍🍳 Kitchen Order",
+        body: `Prepare order for ${order.unitCode}`,
+      },
+
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "background_orders",
+          sound: "new_order",
+        },
+      },
+
+      data: {
+        screen: "AdminOrders",
+        orderId: order._id.toString(),
+      },
+    });
+  }
+
+  // 👇 YE YAHI LIKHNA HAI
+  io.to(order.businessCode).emit("kitchen-order", {
+    ...order.toObject(),
+  });
+}
     if (status === "COMPLETED") {
       io.to(order.businessCode).emit("dashboard-update", {
         type: "ORDER_COMPLETED",

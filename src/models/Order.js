@@ -2,12 +2,23 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
   {
+    businessId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Business",
+    required: true,
+},
     businessCode: {
       type: String,
       required: true,
       index: true,
     },
-
+customer: {
+  name: String,
+  phone: String,
+  address: String,
+  latitude: Number,
+  longitude: Number,
+},
     unitCode: {
       type: String,
       required: true,
@@ -15,7 +26,7 @@ const orderSchema = new mongoose.Schema(
     },
    orderType: {
       type: String,
-      enum: ["DINE_IN", "PARCEL"],
+      enum: ["DINE_IN", "PARCEL", "ONLINE"],
       default: "DINE_IN",
       index: true,
     },

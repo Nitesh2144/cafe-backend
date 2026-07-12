@@ -1,19 +1,40 @@
 import mongoose from "mongoose";
-
+import crypto from "crypto";
 /* ================= UNIT SUB-SCHEMA ================= */
+
+
 const unitSchema = new mongoose.Schema(
   {
-    unitName: { type: String, required: true },
-    unitCode: { type: String, required: true },
+    unitName: {
+      type: String,
+      required: true,
+    },
+
+ unitCode: {
+  type: String,
+  immutable: true,
+  default: () =>
+    crypto.randomBytes(8).toString("hex"),
+},
+
     unitType: {
       type: String,
-      enum: ["Table", "Room", "Counter"],
+      enum: ["Table", "Room", "Counter", "ONLINE"],
       default: "Table",
     },
-    capacity: { type: Number, default: 1 },
-    qrUrl: { type: String },
-    qrImage: { type: String },
-    isActive: { type: Boolean, default: true },
+
+    capacity: {
+      type: Number,
+      default: 1,
+    },
+
+    qrUrl: String,
+    qrImage: String,
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { _id: true }
 );
@@ -23,12 +44,14 @@ const businessSchema = new mongoose.Schema(
   {
     businessName: { type: String, required: true },
 
-    businessCode: {
-      type: String,
-      required: true,
-      unique: true,
-      uppercase: true,
-    },
+businessCode: {
+  type: String,
+  unique: true,
+  immutable: true,
+  uppercase: true,
+  default: () =>
+    `BIZ-${crypto.randomBytes(6).toString("hex").toUpperCase()}`,
+},
 
     businessType: {
       type: String,

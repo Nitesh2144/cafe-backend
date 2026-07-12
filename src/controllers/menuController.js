@@ -351,7 +351,7 @@ else if (req.file && req.file.buffer && req.file.buffer.length > 0) {
 export const getMenuByBusinessCode = async (req, res) => {
   try {
     const { businessCode } = req.params;
-
+const { unitCode } = req.query;
     if (!businessCode) {
       return res.status(400).json({
         message: "businessCode is required",
@@ -363,11 +363,15 @@ const business = await Business.findOne({
   businessCode: businessCode.toUpperCase(),
 });
 
+if (!business) {
+  return res.status(404).json({
+    message: "Business not found",
+  });
+}
 
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
+const unit = business.units.find(
+  (u) => String(u.unitCode) === String(unitCode)
+);
   const menu = await Menu.find({
   businessCode: businessCode.toUpperCase(),
   isAvailable: true,
@@ -379,6 +383,7 @@ const business = await Business.findOne({
 
     res.json({
       businessName: business.businessName,
+        unitType: unit?.unitType || "Table",
       enableItemNote: business.orderSettings?.enableItemNote || false, // 👈 IMPORTANT
   enableFeedback: business.feedbackSettings?.enableFeedback ?? false,
    allowBeforeCompletion: business.feedbackSettings?.allowBeforeCompletion ?? false,

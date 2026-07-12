@@ -24,7 +24,7 @@ import superRoutes from "./routes/superRoutes.js";
 import invoiceConfigRoutes from "./routes/invoiceConfigRoutes.js"
 import feedbackRoutes from "./routes/feedbackRoutes.js"
 import locationRoutes from "./routes/locationRoutes.js";
-import fcmRoutes from "./routes/fcm.routes.js";
+import saveFcmRoutes from "./routes/saveFcmTokenRoute.js";
 import "./cron/deleteOldOrders.js";
 
 const app = express();
@@ -66,6 +66,7 @@ app.use(
 app.use("/api/invoice-config", invoiceConfigRoutes);
 
 app.use("/api/entry", entryRouter);
+app.use("/api/token", saveFcmRoutes);
 app.use("/api/unit", unitRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/menu", menuRoutes);
@@ -76,7 +77,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/super/auth", superAuthRoutes);
 app.use("/api/super", superRoutes);
 app.use("/api/feedback", feedbackRoutes);
-app.use("/api/fcm", fcmRoutes);
 app.use("/api/location", locationRoutes);
 
 app.get("/", (req, res) => {
@@ -84,5 +84,5 @@ app.get("/", (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://10.129.134.238:${PORT}`);
+  console.log(`🚀 Server running on http://10.70.156.238:${PORT}`);
 });

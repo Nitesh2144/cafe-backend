@@ -7,7 +7,10 @@ const businessUserSchema = new mongoose.Schema(
       ref: "Business",
       required: true,
     },
-
+fcmToken: {
+  type: String,
+  default: "",
+},
     username: {
       type: String,
       required: true,
