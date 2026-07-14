@@ -1,34 +1,73 @@
 import admin from "../config/firebase.js";
-import DeviceToken from "../models/DeviceToken.js";
+import Business from "../models/Business.js";
+import BusinessUser from "../models/BusinessUser.js";
 
-export const sendNewOrderNotification = async (businessCode, order) => {
-  const devices = await DeviceToken.find({ businessCode });
-  if (!devices.length) return;
-
-  const message = {
-    notification: {
-      title: "🛎️ New Order Received",
-      body: `₹${order.totalAmount} | New order`,
-    },
-    android: {
-      priority: "high",
-      notification: {
-        sound: "default",
-        channelId: "orders",
-      },
-    },
-    data: {
-      type: "NEW_ORDER",
-      orderId: order._id.toString(),
-      screen: "AdminOrders",
-    },
-    tokens: devices.map(d => d.token),
-  };
-
+export const sendNewOrderNotification = async (
+  businessCode,
+  order
+) => {
   try {
-    await admin.messaging().sendMulticast(message);
-    console.log("🔔 FCM sent");
+    const business = await Business.findOne({
+      businessCode,
+    }).select("_id");
+
+    if (!business) {
+      console.log("❌ Business not found");
+      return;
+    }
+
+    const users = await BusinessUser.find({
+      businessId: business._id,
+      isActive: true,
+      fcmToken: {
+        $nin: ["", null],
+      },
+    }).select("fcmToken");
+
+    const tokens = [
+      ...new Set(
+        users
+          .map((user) => user.fcmToken)
+          .filter(Boolean)
+      ),
+    ];
+
+    if (!tokens.length) {
+      console.log("⚠️ No FCM tokens found");
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: "🛎️ New Order Received",
+        body: `₹${order.totalAmount} | New order`,
+      },
+
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+          channelId: "orders",
+        },
+      },
+
+      data: {
+        type: "NEW_ORDER",
+        orderId: order._id.toString(),
+        screen: "AdminOrders",
+      },
+
+      tokens,
+    };
+
+    const response = await admin
+      .messaging()
+      .sendEachForMulticast(message);
+
+    console.log(
+      `🔔 FCM SENT => Success: ${response.successCount}, Failed: ${response.failureCount}`
+    );
   } catch (err) {
-    console.error("FCM error:", err);
+    console.error("FCM ERROR =>", err);
   }
 };
