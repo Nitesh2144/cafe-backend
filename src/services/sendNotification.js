@@ -60,13 +60,24 @@ export const sendNewOrderNotification = async (
       tokens,
     };
 
-    const response = await admin
-      .messaging()
-      .sendEachForMulticast(message);
+   const response = await admin
+  .messaging()
+  .sendEachForMulticast(message);
 
-    console.log(
-      `🔔 FCM SENT => Success: ${response.successCount}, Failed: ${response.failureCount}`
+console.log(
+  `🔔 FCM SENT => Success: ${response.successCount}, Failed: ${response.failureCount}`
+);
+
+// 🔥 Failed notification ka exact error check
+response.responses.forEach((result, index) => {
+  if (!result.success) {
+    console.error(
+      `❌ FCM FAILED TOKEN ${index}:`,
+      result.error?.code,
+      result.error?.message
     );
+  }
+});
   } catch (err) {
     console.error("FCM ERROR =>", err);
   }

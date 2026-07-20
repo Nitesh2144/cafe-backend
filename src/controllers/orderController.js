@@ -152,7 +152,20 @@ try {
       });
 
     console.log(response);
-
+response.responses.forEach((result, index) => {
+  if (!result.success) {
+    console.log(
+      "❌ FCM FAILED:",
+      result.error?.code,
+      result.error?.message
+    );
+  } else {
+    console.log(
+      "✅ FCM SUCCESS TOKEN:",
+      index
+    );
+  }
+});
   }
 
 } catch (err) {
